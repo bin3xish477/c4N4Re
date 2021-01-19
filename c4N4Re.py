@@ -14,18 +14,17 @@ logger = getLogger(__name__)
 format_ = "[%(asctime)s] : %(filename)s : %(message)s"
 basicConfig(
     format=format_, level=INFO,
-    filename="c4N4Re.log", filemode='a'
+    filename="c4N4Re.log", filemode='w'
 )
 
 if __name__ == "__main__":
 	config = ConfigParser()
 	config.read("config.ini")
 
+	l = Login(config=config)
 	if not config.getboolean("general", "ignore_password_prompt"):
-		l = Login(config=config)
 		l.prompt()
 	elif config.getboolean("general", "use_env_login_arguments"):
-		l = Login()
 		l.env_login()
 
 	try:

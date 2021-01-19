@@ -11,13 +11,13 @@ from logging import getLogger
 from os import environ
 
 class Login:
-	def __init__(self, *, config=None):
+	def __init__(self, config):
 		self.config = config
 		self.context = CryptContext(
 				schemes=["pbkdf2_sha256"],
 				default="pbkdf2_sha256",
 				pbkdf2_sha256__default_rounds=30000)
-		self.logger = getLogger(__file__)
+		self.logger = getLogger(__name__)
 
 	@property
 	def email(self):
@@ -87,4 +87,11 @@ class Login:
 	def env_login(self):
 		self._email    = environ["EMAIL_ADDR"]
 		self._password = environ["EMAIL_PASS"]
+		if not self.config.has_section("login"):
+			self.config.add_section("login")
+
+		self.config["login"]["email"] = self.email
+		self.config["login"]["password_hash"] = self.context.encrypt(self.password) 
+		with open("config.ini", "w") as f:
+			self.config.write(f)
 

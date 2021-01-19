@@ -23,7 +23,7 @@ class Watcher:
         self.config   = config
         self.password = password
         self.num_of_alerts = 0
-        self.logger = getLogger(__file__)
+        self.logger = getLogger(__name__)
 
     def _cpu(self):
         pass
