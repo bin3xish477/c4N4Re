@@ -69,7 +69,6 @@ class Watcher:
                     self.config["ssh"]["subject"],
                     message)
                 break
-        # Restart the SSH detector
 
     def _ip(self):
         for conn in net_connections():
