@@ -117,4 +117,3 @@ class Login:
 
 		with open("config.ini", "w") as f:
 			self.config.write(f)
-
