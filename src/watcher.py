@@ -51,8 +51,7 @@ class Watcher:
                           f"exceeded the max disk utilization percentage of {max_disk_util}%."
                 self.send_alert(
                     self.config["disks"]["subject"],
-                    message
-                    )
+                    message)
                 self.num_of_alerts += 1
 
     def _ssh(self):
