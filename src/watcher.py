@@ -4,6 +4,7 @@ from psutil import cpu_percent
 from psutil import virtual_memory
 from psutil import net_connections
 from psutil import process_iter
+from psutil import disk_usage
 from psutil import NoSuchProcess
 from psutil import AccessDenied
 from psutil import ZombieProcess
@@ -32,7 +33,10 @@ class Watcher:
         pass
     
     def _disk(self):
-        pass
+        for device in self.config["disks"]:
+            device_usage_percentage = disk_usage(device).percent
+            if device_usage_percentage >= self.config["disks"]:
+                self.send_alert()
 
     def _ssh(self):
         pass
@@ -65,7 +69,8 @@ class Watcher:
 
     def watch(self):
         while True:
-            self._services()
+            if self.config.has_section["services"]:
+                self._services()
             sleep(int(self.config["general"]["interval_between_evaluations"]))
 
     def send_alert(self, subject, message):
