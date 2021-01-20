@@ -31,7 +31,6 @@ class Login:
 	def password_hash(self):
 		return self._password_hash
 	
-	
 	def prompt(self):
 		self.root = Tk()
 		self.root.title("Login")
@@ -94,4 +93,3 @@ class Login:
 		self.config["login"]["password_hash"] = self.context.encrypt(self.password) 
 		with open("config.ini", "w") as f:
 			self.config.write(f)
-
