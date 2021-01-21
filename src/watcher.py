@@ -1,5 +1,7 @@
 from src.emailer import Emailer
 
+from platform import system
+
 from psutil import cpu_percent
 from psutil import cpu_count
 from psutil import cpu_freq
@@ -11,14 +13,17 @@ from psutil import NoSuchProcess
 from psutil import AccessDenied
 from psutil import ZombieProcess
 
-from winreg import ConnectRegistry
-from winreg import OpenKey
-from winreg import HKEY_LOCAL_MACHINE
-from winreg import EnumKey
-from winreg import EnumValue
-from winreg import QueryInfoKey
-from winreg import QueryValueEx
-from winreg import KEY_ALL_ACCESS
+if system() == "Windows":
+    from winreg import ConnectRegistry
+    from winreg import OpenKey
+    from winreg import HKEY_LOCAL_MACHINE
+    from winreg import EnumKey
+    from winreg import EnumValue
+    from winreg import QueryInfoKey
+    from winreg import QueryValueEx
+    from winreg import KEY_ALL_ACCESS
+    
+    from win32net import NetLocalGroupEnum
 
 from netaddr import IPNetwork
 
@@ -31,8 +36,6 @@ from time import sleep
 from sys import exit
 
 from logging import getLogger
-
-from platform import system
 
 from re import search
 
@@ -136,9 +139,9 @@ class Watcher:
     def _files(self):
         self.num_of_alerts += 1
 
-    def _services(self):
+    def _processes(self):
         monitored_services = list(
-            map(lambda s: s.lower(), self.config["services"]["monitor"].split("|"))
+            map(lambda s: s.lower(), self.config["processes"]["monitor"].split("|"))
             )
         for process in process_iter():
             try:
@@ -146,7 +149,7 @@ class Watcher:
                     message = f"c4N4Re has detected a running service " \
                     f"currently being monitored: {process.name()}"
                     self._send_alert(
-                        self.config["services"]["subject"],
+                        self.config["processes"]["subject"],
                         message)
                     self.num_of_alerts += 1
             except (NoSuchProcess, AccessDenied, ZombieProcess):
@@ -190,22 +193,46 @@ class Watcher:
                                 user = QueryValueEx(user_key, r"ProfileImagePath")[0].split("\\")[-1]
 
                                 if user not in allowed_users:
-                                    message = f"c4N4Re has detected a new user: {user}. " \
-                                              f"If you did not create this new user, your system might be compromised!"
+                                    message = f"c4N4Re has detected a interactive new user: {user}. " \
+                                              f"If you have not created a new user or have not changed the shell " \
+                                              f"for a service account, then your system might be compromised!"
                                     self._send_alert(
                                         self.config["users"]["subject"],
                                         message)
                                     self.num_of_alerts += 1
         else:
+            linux_shells = (
+                            "bash", # GNU Bourne-Again Shell
+                            "sh",   # Bourne Shell
+                            "ksh",  # Korn Shell
+                            "zsh",  # Z Shell
+                            "csh"   # C Shell
+                            ) 
+            interactive_users = []
+            allowed_users = list(map(lambda s: s.strip(), self.config["users"]["allow_list"].split('|')))
+
             with open("/etc/passwd") as passwd:
-                pass
-            #self._send_alert()
-            #self.num_of_alerts += 1
+                for entry in passwd:
+                    entry = entry.strip().split(":")
+                    user, shell = entry[0], entry[-1].split('/')[-1]
+                    if shell in linux_shells:
+                        interactive_users.append(user)
+                    for interactive_user in interactive_users:
+                        if interactive_user not in allowed_users:
+                            message = f"c4N4Re has detected a new interactive user: {interactive_user}. " \
+                                      f"If you have not created a new user or have not changed the shell " \
+                                      f"for a service account, then your system might be compromised!"
+                            self._send_alert(
+                                self.config["users"]["subject"],
+                                message)
+                            self.num_of_alerts += 1
 
     def _groups(self):
+
         self.num_of_alerts += 1
     
     def _send_alert(self, subject, message):
+        """Sends an alert to an email account"""
         if self.num_of_alerts == self.max_alerts:
             exit(1)
 
@@ -228,19 +255,20 @@ class Watcher:
 
     def watch(self):
         while True:
-            if self.config.has_section("cpu"):
-                self._cpu()
-            if self.config.has_section("ram"):
-                self._ram()
-            if self.config.has_section("disks"):
-                self._disks()
-            if self.config.has_section("services"):
-                self._services()
-            if self.config.has_section("disks"):
-                self._disks()
-            if self.config.has_section("ssh"):
-                self._ssh()
+            #if self.config.has_section("cpu"):
+            #    self._cpu()
+            #if self.config.has_section("ram"):
+            #    self._ram()
+            #if self.config.has_section("disks"):
+            #    self._disks()
+            #if self.config.has_section("processes"):
+            #    self._processes()
+            #if self.config.has_section("disks"):
+            #    self._disks()
+            #if self.config.has_section("ssh"):
+            #    self._ssh()
             if self.config.has_section("users"):
                 self._users()
-
+            if self.config.has_section("groups"):
+                self._groups()
             sleep(int(self.config["general"]["interval_between_evaluations"]))
