@@ -39,6 +39,7 @@ if __name__ == "__main__":
 		watcher = Watcher(config, l.password)
 		watcher.watch()
 	except AttributeError as e:
+		print(e)
 		logger.critical("Password has not been set. Prompting user for creds")
 		l.prompt()
 	except KeyboardInterrupt:

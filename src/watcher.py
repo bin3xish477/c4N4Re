@@ -52,6 +52,12 @@ class Watcher:
         if self.config.has_option("ip", "subnet_blocklist"):
             self.ip_blocklist = list(ip for s in self.config["ip"]["subnet_blocklist"].split("|") for ip in IPNetwork(s.strip()))
 
+        if self.config.has_section("local_groups") and self.config["local_groups"]["allow_list"].strip() == "":
+            self.groups = [group["name"] for group in NetLocalGroupEnum(None, 0, 0)[0]]
+            self.config.set("local_groups", "allow_list", "|".join(self.groups))
+            with open("config.ini", "w") as f:
+                self.config.write(f)
+
     def _cpu(self):
         max_cpu_util = float(self.config["cpu"]["max_util"])
 
@@ -227,14 +233,28 @@ class Watcher:
                                 message)
                             self.num_of_alerts += 1
 
-    def _groups(self):
+    def _local_groups(self):
+        if "groups" not in self.__dict__:
+            allowed_groups = list(map(lambda s: s.strip(), self.config["local_groups"]["allow_list"].split("|")))
+        else:
+            allowed_groups = self.groups
 
-        self.num_of_alerts += 1
+        for group in NetLocalGroupEnum(None, 0, 0)[0]:
+            group = group["name"]
+            if group not in allowed_groups:
+                message = f"c4N4Re has detected the creation of a new local group: {group}. " \
+                          f"This group may have been created after installing a new application " \
+                          f"but this may have also been created by an adversary. Further research " \
+                          f"is encouraged."
+                self._send_alert(
+                    self.config["local_groups"]["subject"],
+                    message)
+                self.num_of_alerts += 1
     
     def _send_alert(self, subject, message):
         """Sends an alert to an email account"""
         if self.num_of_alerts == self.max_alerts:
-            exit(1)
+            exit(0)
 
         server = self.config["smtp_config"]["server"]
         port   = self.config["smtp_config"]["port"]
@@ -267,8 +287,9 @@ class Watcher:
             #    self._disks()
             #if self.config.has_section("ssh"):
             #    self._ssh()
-            if self.config.has_section("users"):
-                self._users()
-            if self.config.has_section("groups"):
-                self._groups()
+            # if self.config.has_section("users"):
+            #     self._users()
+            if self.config.has_section("local_groups"):
+                self._local_groups()
+
             sleep(int(self.config["general"]["interval_between_evaluations"]))
