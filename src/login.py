@@ -97,7 +97,8 @@ class Login:
 		try:
 			self._email    = environ["EMAIL_ADDR"]
 			self._password = environ["EMAIL_PASS"]
-		except KeyError:
+		except KeyError as e:
+			print(e)
 			self.logger.critical("EMAIL_ADDR or EMAIL_PASS environment variables not set")
 			self.prompt()
 			return

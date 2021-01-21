@@ -1,6 +1,8 @@
 from src.emailer import Emailer
 
 from psutil import cpu_percent
+from psutil import cpu_count
+from psutil import cpu_freq
 from psutil import virtual_memory
 from psutil import net_connections
 from psutil import process_iter
@@ -27,29 +29,71 @@ class Watcher:
         self.password                      = password
         self.num_of_alerts                 = 0
         self.logger                        = getLogger(__name__)
-        self.max_alerts                    = self.config["general"]["max_alerts"]
+        self.max_alerts                    = int(self.config["general"]["max_alerts"])
         self.continue_beyond_initial_alert = self.config.getboolean("general", "continue_beyond_initial_alert")
 
         if self.config.has_option("ip", "subnet_blocklist"):
             self.ip_blocklist = list(ip for s in self.config["ip"]["subnet_blocklist"].split("|") for ip in IPNetwork(s.strip()))
 
     def _cpu(self):
-        pass
+        max_cpu_util = float(self.config["cpu"]["max_util"])
+
+        if cpu_percent() > max_cpu_util:
+            _cpu_freq    = cpu_freq()
+            current_freq = _cpu_freq.current
+            min_freq     = _cpu_freq.min
+            max_freq     = _cpu_freq.max
+            _cpu_count   = cpu_count()
+
+            message = f"c4N4Re has detected that CPU utilization has exceeded the maximum " \
+                      f"utilization percentage currently set to {max_cpu_util}%\n" \
+                      f"CPU Stats:\n\tCount = {_cpu_count}\n\tCurrent Frequency = {current_freq}" \
+                      f"\n\tMinimun Frequency = {min_freq}\n\tMaximum Frequency = {max_freq}\n"
+            self._send_alert(
+                self.config["cpu"]["subject"],
+                message)
+            self.num_of_alerts += 1
     
     def _ram(self):
-        pass
+        _virtual_memory = virtual_memory()
+        max_ram_util = float(self.config["ram"]["max_util"])
+
+        if _virtual_memory.percent > max_ram_util:
+            gb = 2 ** 30
+            ram_total     = _virtual_memory.total / gb
+            ram_available = _virtual_memory.available / gb
+            ram_used      = _virtual_memory.used / gb
+            ram_free      = _virtual_memory.free / gb
+
+            message = f"c4N4Re has detected that RAM utilization has exceeded the maximum " \
+                      f"utilization percentage currently set to {max_ram_util}%." \
+                      f"\nRAM Stats:\n\tTotal = {ram_total}\n\tAvailable = {ram_available}" \
+                      f"\n\tUsed = {ram_used}\t\nFree = {ram_free}\n"
+            self._send_alert(
+                self.config["ram"]["subject"],
+                message)
+            self.num_of_alerts += 1
     
     def _disks(self):
+        max_disk_util = float(self.config["disks"]["max_util"])
+
         for drive in self.config["disks"]["drives"].split("|"):
+            drive            = drive.strip()
+            drive_stats   = disk_usage(drive)
+            drive_percentage = drive_stats.percent
 
-            drive                  = drive.strip()
-            drive_usage_percentage = disk_usage(drive).percent
-            max_disk_util          = float(self.config["disks"]["max_disk_util"])
+            if drive_percentage > max_disk_util:
+                gb = 2 ** 30
+                drive_space   = drive_stats.total / gb
+                drive_used    = drive_stats.used / gb
+                drive_free    = drive_stats.free / gb
+                max_disk_util = float(self.config["disks"]["max_util"])
 
-            if drive_usage_percentage > max_disk_util:
                 message = f"c4N4Re has detected a storage drive ({drive}) that has " \
-                          f"exceeded the max disk utilization percentage of {max_disk_util}%."
-                self.send_alert(
+                          f"exceeded the max disk utilization percentage of {max_disk_util}%." \
+                          f"\n{drive} Stats:\n\tTotal Space = {drive_space}\n\tUsed Space = {drive_used}" \
+                          f"\n\tFree Space = {drive_free}\n\tUsed Space in Percentage = {drive_percentage}%"
+                self._send_alert(
                     self.config["disks"]["subject"],
                     message)
                 self.num_of_alerts += 1
@@ -64,9 +108,10 @@ class Watcher:
             if ssh_conns > max_concurrent_ssh_connections:
                 message = f"c4N4Re has detected that there are concurrent SSH connections" \
                           f" and has exceeded the max SSH connections allowed: {max_concurrent_ssh_connections}"
-                self.send_alert(
+                self._send_alert(
                     self.config["ssh"]["subject"],
                     message)
+                self.num_of_alerts += 1
                 break
 
     def _ip(self):
@@ -75,7 +120,7 @@ class Watcher:
                 pass
 
     def _files(self):
-        pass
+        self.num_of_alerts += 1
 
     def _services(self):
         monitored_services = list(
@@ -86,7 +131,7 @@ class Watcher:
                 if process.name().lower() in monitored_services:
                     message = f"c4N4Re has detected a running service " \
                     f"currently being monitored: {process.name()}"
-                    self.send_alert(
+                    self._send_alert(
                         self.config["services"]["subject"],
                         message)
                     self.num_of_alerts += 1
@@ -99,27 +144,20 @@ class Watcher:
         Allow user in config.ini to specify what exectuables should be present
         in the startup registry entry. If a new entry appears, send email.
         """
-        pass
+        self.num_of_alerts += 1
 
-    def watch(self):
-        while True:
-            if self.config.has_section("services"):
-                self._services()
+    def _users(self):
+        self.num_of_alerts += 1
 
-            if self.config.has_section("disks"):
-                self._disks()
-
-            if self.config.has_section("ssh"):
-                self._ssh()
-
-            sleep(int(self.config["general"]["interval_between_evaluations"]))
-
-    def send_alert(self, subject, message):
+    def _groups(self):
+        self.num_of_alerts += 1
+    
+    def _send_alert(self, subject, message):
         if self.num_of_alerts == self.max_alerts:
             exit(1)
 
-        server = self.config["smtp"]["server"]
-        port   = self.config["smtp"]["port"]
+        server = self.config["smtp_config"]["server"]
+        port   = self.config["smtp_config"]["port"]
 
         with Emailer(server, port) as email:
             login = self.config["login"]
@@ -134,3 +172,22 @@ class Watcher:
             return
         else:
             exit(0)
+
+
+    def watch(self):
+        while True:
+
+            if self.config.has_section("cpu"):
+                self._cpu()
+            if self.config.has_section("ram"):
+                self._ram()
+            if self.config.has_section("disks"):
+                self._disks()
+            if self.config.has_section("services"):
+                self._services()
+            if self.config.has_section("disks"):
+                self._disks()
+            if self.config.has_section("ssh"):
+                self._ssh()
+
+            sleep(int(self.config["general"]["interval_between_evaluations"]))
