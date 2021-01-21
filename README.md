@@ -1,2 +1,2 @@
 # c4N4Re
-A Python program to easily enable a variety of system canaries.
+**c4N4Re** (pronounced "canary") is a Python program to easily enable a variety of system canaries.
