@@ -80,6 +80,7 @@ class Login:
 				self.config.set("login", "password_hash", self.password_hash)
 				with open("config.ini", "w") as f:
 					self.config.write(f)
+
 				messagebox.showinfo("", "Setup complete!")
 				self.root.destroy()
 			else:
@@ -98,7 +99,6 @@ class Login:
 			self._email    = environ["EMAIL_ADDR"]
 			self._password = environ["EMAIL_PASS"]
 		except KeyError as e:
-			print(e)
 			self.logger.critical("EMAIL_ADDR or EMAIL_PASS environment variables not set")
 			self.prompt()
 			return

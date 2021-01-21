@@ -11,6 +11,15 @@ from psutil import NoSuchProcess
 from psutil import AccessDenied
 from psutil import ZombieProcess
 
+from winreg import ConnectRegistry
+from winreg import OpenKey
+from winreg import HKEY_LOCAL_MACHINE
+from winreg import EnumKey
+from winreg import EnumValue
+from winreg import QueryInfoKey
+from winreg import QueryValueEx
+from winreg import KEY_ALL_ACCESS
+
 from netaddr import IPNetwork
 
 from os import stat
@@ -23,12 +32,17 @@ from sys import exit
 
 from logging import getLogger
 
+from platform import system
+
+from re import search
+
 class Watcher:
     def __init__(self, config, password):
         self.config                        = config
         self.password                      = password
         self.num_of_alerts                 = 0
         self.logger                        = getLogger(__name__)
+        self.system                        = system()
         self.max_alerts                    = int(self.config["general"]["max_alerts"])
         self.continue_beyond_initial_alert = self.config.getboolean("general", "continue_beyond_initial_alert")
 
@@ -147,7 +161,46 @@ class Watcher:
         self.num_of_alerts += 1
 
     def _users(self):
-        self.num_of_alerts += 1
+        r"""
+        (Windows)
+            This function checks the registry key:
+            ``SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList``
+            for user sids. If a new account is created, the alert will be triggered
+            after the system is rebooted and is updated to reflect the creation of the account.
+
+        (Linux)
+            Open the etc/passwd file and extracts all the user's. If a new user is found within
+            this file or if a service account shell has been updated to an interactive logon shell,
+            an alert will be triggered
+        """
+        target_key = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
+        allowed_users = list(map(lambda s: s.strip(), self.config["users"]["allow_list"].split("|")))
+
+        if self.system == "Windows":
+            with ConnectRegistry(None, HKEY_LOCAL_MACHINE) as hklm:
+                with OpenKey(hklm, target_key, 0, KEY_ALL_ACCESS) as profile_list:
+
+                    subkeys = QueryInfoKey(profile_list)[0]
+                    for i in range(subkeys):
+                        subkey = EnumKey(profile_list, i)
+                        if search(r"^S-\d-\d+-(\d+-){1,14}\d+$", subkey):
+
+                            with OpenKey(hklm, f"{target_key}\\{subkey}", 0, KEY_ALL_ACCESS) as user_key:
+
+                                user = QueryValueEx(user_key, r"ProfileImagePath")[0].split("\\")[-1]
+
+                                if user not in allowed_users:
+                                    message = f"c4N4Re has detected a new user: {user}. " \
+                                              f"If you did not create this new user, your system might be compromised!"
+                                    self._send_alert(
+                                        self.config["users"]["subject"],
+                                        message)
+                                    self.num_of_alerts += 1
+        else:
+            with open("/etc/passwd") as passwd:
+                pass
+            #self._send_alert()
+            #self.num_of_alerts += 1
 
     def _groups(self):
         self.num_of_alerts += 1
@@ -173,10 +226,8 @@ class Watcher:
         else:
             exit(0)
 
-
     def watch(self):
         while True:
-
             if self.config.has_section("cpu"):
                 self._cpu()
             if self.config.has_section("ram"):
@@ -189,5 +240,7 @@ class Watcher:
                 self._disks()
             if self.config.has_section("ssh"):
                 self._ssh()
+            if self.config.has_section("users"):
+                self._users()
 
             sleep(int(self.config["general"]["interval_between_evaluations"]))

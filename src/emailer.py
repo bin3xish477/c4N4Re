@@ -31,4 +31,3 @@ class Emailer():
         except:
             return False
         return True
-
