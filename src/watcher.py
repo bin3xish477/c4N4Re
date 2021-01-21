@@ -154,9 +154,9 @@ class Watcher:
                 continue
 
     def _startup(self):
-        """
-        Allow user in config.ini to specify what exectuables should be present
-        in the startup registry entry. If a new entry appears, send email.
+        r"""
+        Registry key for all users startup applications:
+        HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
         """
         self.num_of_alerts += 1
 
