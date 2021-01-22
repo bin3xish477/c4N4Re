@@ -34,6 +34,8 @@ from logging import getLogger
 
 from os import environ
 
+from sys import exit
+
 class Login:
 	def __init__(self, config):
 		self.config    = config
@@ -59,7 +61,7 @@ class Login:
 			self._password = environ["EMAIL_PASS"]
 		except KeyError as e:
 			self.logger.critical("EMAIL_ADDR or EMAIL_PASS environment variables not set")
-			return
+			exit(1)
 
 		if not self.config.has_section("login"):
 			self.config.add_section("login")
