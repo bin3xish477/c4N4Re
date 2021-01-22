@@ -4,10 +4,6 @@
 
 ## Setup
 
-Don't forget Linux: `sudo apt install python3-tk`
-
-
-
 **Windows**
 
 Installing Python Dependencies:
