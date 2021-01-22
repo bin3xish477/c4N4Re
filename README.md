@@ -49,14 +49,12 @@ UUID=cdc89b31-ed23-4663-a72b-8139ef673fc1 /boot           ext4    strictatime,de
 /dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
 ```
 
-### Usage
+### STMP Authentication
+
+c4N4Re will look for the environment variables: `EMAIL_ADDR` and `EMAIL_PASS`', where the former is the email address and the latter is the app password for the specified email address. If you are using Gmail, as most peopele are, it is advised to [create an app password](https://www.lifewire.com/get-a-password-to-access-gmail-by-pop-imap-2-1171882).
 
 
-**STMP Authentication**
-
-Email credentials only need to provided once, and then c4N4Re will store the hashes of both the email and the password. The key-derivation function, `pbkdf2_sha256`, with an iteration count of 100100. c4N4Re will look for the environment variables: `EMAIL_ADDR` and `EMAIL_PASS`', where the former is the email address and the latter is the password for the specified email address. If you are using Gmail, as most peopele are, you will need to [create an app password](https://www.lifewire.com/get-a-password-to-access-gmail-by-pop-imap-2-1171882).
-
-After reading in the credentials from the `login` section, c4N4Re will hash the values for `email` and `password` and substitute them for their corresponding hash.
+## Usage 
 
 **Enabling Canaries**
 
