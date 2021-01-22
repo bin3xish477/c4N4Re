@@ -25,7 +25,7 @@ SOFTWARE.
 """
 
 __author__  = "BinexisHATT"
-__date__    = 1_21_2021
+__date__    = "01/21/2021"
 __version__ = 1.0
 
 from configparser import ConfigParser

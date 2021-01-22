@@ -87,11 +87,10 @@ class Watcher:
                 self.groups = []
                 with open("/etc/group") as f:
                     for line in f:
-                        groups.append(line.split(':')[0])
-                    print(self.groups)
-                    # self.config.set("local_groups", "allow_list", "|".join(self.groups))
-                    # with open("config.ini", "w") as c:
-                    #     self.config.write(c)
+                        self.groups.append(line.split(':')[0])
+                    self.config.set("local_groups", "allow_list", "|".join(self.groups))
+                    with open("config.ini", "w") as c:
+                        self.config.write(c)
 
     def _cpu(self):
         max_cpu_util = float(self.config["cpu"]["max_util"])
@@ -178,6 +177,11 @@ class Watcher:
                 pass
 
     def _files(self):
+        file_access_times = {}
+        for _file in self.config["files"]["monitor"]:
+            file_access_times[_file] = stat(_file).st_atime
+        print(file_access_times)
+        
         self.num_of_alerts += 1
 
     def _processes(self):
@@ -274,17 +278,31 @@ class Watcher:
         else:
             allowed_groups = self.groups
 
-        for group in NetLocalGroupEnum(None, 0, 0)[0]:
-            group = group["name"]
-            if group not in allowed_groups:
-                message = f"c4N4Re has detected the creation of a new local group: {group}. " \
-                          f"This group may have been created after installing a new application " \
-                          f"but this may have also been created by an adversary. Further research " \
-                          f"is encouraged."
-                self._send_alert(
-                    self.config["local_groups"]["subject"],
-                    message)
-                self.num_of_alerts += 1
+        if self.system == "Windows":
+            for group in NetLocalGroupEnum(None, 0, 0)[0]:
+                group = group["name"]
+                if group not in allowed_groups:
+                    message = f"c4N4Re has detected the creation of a new local group: {group}. " \
+                              f"This group may have been created after installing a new application " \
+                              f"but this may have also been created by an adversary. Further research " \
+                              f"is encouraged."
+                    self._send_alert(
+                        self.config["local_groups"]["subject"],
+                        message)
+                    self.num_of_alerts += 1
+        else:
+            with open("/etc/group") as group:
+                for grp in group:
+                    grp = grp.split(":")[0]
+                    if grp not in allowed_groups:
+                        message = f"c4N4Re has detected the creation of a new group: {grp}. " \
+                                  f"This group may have been created after installing a new application " \
+                                  f"but this may have also been created by an adversary. Further research " \
+                                  f"is encouraged."
+                        self._send_alert(
+                            self.config["local_groups"]["subject"],
+                            message)
+                        self.num_of_alerts += 1
     
     def _send_alert(self, subject, message):
         """Sends an alert to an email account"""
@@ -316,6 +334,8 @@ class Watcher:
             #    self._ram()
             #if self.config.has_section("disks"):
             #    self._disks()
+            if self.config.has_section("files"):
+                self._files()
             #if self.config.has_section("processes"):
             #    self._processes()
             #if self.config.has_section("disks"):
@@ -324,7 +344,7 @@ class Watcher:
             #    self._ssh()
             # if self.config.has_section("users"):
             #     self._users()
-            if self.config.has_section("local_groups"):
-                self._local_groups()
+            #if self.config.has_section("local_groups"):
+            #    self._local_groups()
 
             sleep(int(self.config["general"]["interval_between_evaluations"]))
