@@ -62,6 +62,8 @@ monitor = secrets.txt
 subject = [Custom subject header for email]
 ```
 
+**Note**: since the credentials are being stored in this file, you should add the `config.ini` as a file to be monitored in order for c4N4Re to alert you when someone accesses this file.
+
 - The `monitor` option is where you specify which files you wish to get an alerted upon someone accessing them. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
 - The `subject` option is configurable for all canaries that are activated
 
