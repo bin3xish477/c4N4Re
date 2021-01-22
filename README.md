@@ -65,4 +65,13 @@ subject = [Custom subject header for email]
 - The `monitor` option is where you specify which files you wish to get an alerted upon someone accessing them. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
 - The `subject` option is configurable for all canaries that are activated
 
+## Schedule c4N4Re to run at Startup on Linux and Windows
 
+**Windows**
+https://www.ionos.com/digitalguide/server/configuration/startup-folder-in-windows-10/
+
+**Linux**
+Edit the crontab file with `crontab -e` and add the following:
+
+```
+```
