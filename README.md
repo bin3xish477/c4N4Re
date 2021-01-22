@@ -2,7 +2,7 @@
 
 **c4N4Re** (pronounced "canary") is a Python program to easily enable a variety of system canaries.
 
-### Setup
+## Setup
 
 Don't forget Linux: `sudo apt install python3-tk`
 
@@ -49,7 +49,7 @@ UUID=cdc89b31-ed23-4663-a72b-8139ef673fc1 /boot           ext4    strictatime,de
 /dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
 ```
 
-### STMP Authentication
+## STMP Authentication
 
 c4N4Re will look for the environment variables: `EMAIL_ADDR` and `EMAIL_PASS`', where the former is the email address and the latter is the app password for the specified email address. If you are using Gmail, as most peopele are, it is advised to [create an app password](https://www.lifewire.com/get-a-password-to-access-gmail-by-pop-imap-2-1171882).
 
