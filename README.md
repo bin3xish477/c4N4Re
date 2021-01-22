@@ -74,7 +74,7 @@ $Env:EMAIL_PASS='Your_email_password'
 
 Using c4N4Re is all about the `config.ini` file. Uncommenting will any section, excluding the "general", will be configured to run automatically activate a canary revelant to the name of that section. For example, setting the activating a file canary for a particular file looks something like this:
 
-```
+```python
 [files]
 monitor = secrets.txt
 subject = [Custom subject header for email]
