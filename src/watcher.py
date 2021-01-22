@@ -92,6 +92,17 @@ class Watcher:
                     with open("config.ini", "w") as c:
                         self.config.write(c)
 
+        if self.config.has_section("files"):
+            self.monitored_files = list(
+                map(lambda s: s.lower(), self.config["files"]["monitor"].split("|"))
+            )
+            self.monitored_files_access_times = {}
+            for _file in self.monitored_files:
+                if exists(_file):
+                    self.monitored_files_access_times[_file] = stat(_file).st_atime
+                else:
+                    self.logger.info("{_file} does not exists")
+
     def _cpu(self):
         max_cpu_util = float(self.config["cpu"]["max_util"])
 
@@ -177,12 +188,15 @@ class Watcher:
                 pass
 
     def _files(self):
-        file_access_times = {}
-        for _file in self.config["files"]["monitor"]:
-            file_access_times[_file] = stat(_file).st_atime
-        print(file_access_times)
-        
-        self.num_of_alerts += 1
+        if len(self.monitored_files_access_times) != 0 and len(self.monitored_files) != 0:
+            for _file in self.monitored_files:
+                if stat(_file).st_atime != self.monitored_files_access_times[_file]:
+                    message = f"c4N4Re has detected that some accessed the file {_file}."
+                    self._send_alert(
+                        self.config["files"]["subject"],
+                        message)
+                    self.num_of_alerts += 1
+                    break
 
     def _processes(self):
         monitored_services = list(
