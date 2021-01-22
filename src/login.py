@@ -37,10 +37,6 @@ from os import environ
 class Login:
 	def __init__(self, config):
 		self.config    = config
-		self.context   = CryptContext(
-					schemes=["pbkdf2_sha256"],
-					default="pbkdf2_sha256",
-					pbkdf2_sha256__default_rounds=30000)
 		self.logger    = getLogger(__name__)
 		self._email    = ""
 		self._password = ""
@@ -49,17 +45,9 @@ class Login:
 	def email(self):
 		return self._email
 
-	@email.setter
-	def email(self, arg):
-		self._email = arg
-
 	@property
 	def password(self):
 		return self._password
-
-	@password.setter
-	def password(self, arg):
-		self._password = arg
 	
 	@property
 	def password_hash(self):
@@ -71,21 +59,17 @@ class Login:
 			self._password = environ["EMAIL_PASS"]
 		except KeyError as e:
 			self.logger.critical("EMAIL_ADDR or EMAIL_PASS environment variables not set")
-			self.prompt()
 			return
 
 		if not self.config.has_section("login"):
 			self.config.add_section("login")
 			self.config["login"]["email"] = self.email
-			self.config["login"]["password_hash"] = self.context.encrypt(self.password) 
+			self.config["login"]["app_pass"] = self.password
 		else:
 			if self.config["login"]["email"] != self.email:
 				self.config["login"]["email"] = self.email
-				self.config["login"]["password_hash"] = self.context.encrypt(self.password) 
-			else:
-				if not self.context.verify(self.password, self.config["login"]["password_hash"]):
-					log.critical(f"Invalid password for email: {self.email}")
-					exit(1)
+			if self.config["login"]["app_pass"] != self.password
+				self.config["login"]["app_pass"] = self.password
 
 		with open("config.ini", "w") as f:
 			self.config.write(f)
