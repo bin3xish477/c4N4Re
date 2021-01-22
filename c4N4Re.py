@@ -48,28 +48,20 @@ if __name__ == "__main__":
 	config = ConfigParser()
 	config.read("config.ini")
 
-	l = Login(config=config)
-	if not config.getboolean("general", "ignore_password_prompt"):
-		l.prompt()
-	elif config.getboolean("general", "use_env_vars_for_login"):
-		l.env_login()
-	else:
-		try:
-			l.email    = config["login"]["email"]
-			l.password = config["login"]["password"]
-		except:
-			logger.critical(
-				"Unable to retrieve email or password values from config file. Prompting user for creds"
-				)
-			l.prompt()
+	login = Login(config=config)
+	try:
+		login.email    = config["login"]["email"]
+		login.password = config["login"]["password"]
+	except:
+		logger.critical(
+			"Unable to retrieve email or password values from config file. Prompting user for creds"
+			)
 
 	try:
 		watcher = Watcher(config, l.password)
 		watcher.watch()
 	except AttributeError as e:
-		print(e)
 		logger.critical("Password has not been set. Prompting user for creds")
-		l.prompt()
 	except KeyboardInterrupt:
 		logger.info("Captured KeyboardInterrupt exception. Exiting program")
 		exit(1)
