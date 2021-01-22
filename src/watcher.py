@@ -1,3 +1,27 @@
+"""
+MIT License
+
+Copyright (c) 2021 Alexis Rodriguez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 from src.emailer import Emailer
 
 from platform import system
@@ -52,11 +76,22 @@ class Watcher:
         if self.config.has_option("ip", "subnet_blocklist"):
             self.ip_blocklist = list(ip for s in self.config["ip"]["subnet_blocklist"].split("|") for ip in IPNetwork(s.strip()))
 
-        if self.config.has_section("local_groups") and self.config["local_groups"]["allow_list"].strip() == "":
-            self.groups = [group["name"] for group in NetLocalGroupEnum(None, 0, 0)[0]]
-            self.config.set("local_groups", "allow_list", "|".join(self.groups))
-            with open("config.ini", "w") as f:
-                self.config.write(f)
+        if self.system == "Windows":
+            if self.config.has_section("local_groups") and self.config["local_groups"]["allow_list"].strip() == "":
+                self.groups = [group["name"] for group in NetLocalGroupEnum(None, 0, 0)[0]]
+                self.config.set("local_groups", "allow_list", "|".join(self.groups))
+                with open("config.ini", "w") as f:
+                    self.config.write(f)
+        else:
+            if self.config.has_section("local_groups") and self.config["local_groups"]["allow_list"].strip() == "":
+                self.groups = []
+                with open("/etc/group") as f:
+                    for line in f:
+                        groups.append(line.split(':')[0])
+                    print(self.groups)
+                    # self.config.set("local_groups", "allow_list", "|".join(self.groups))
+                    # with open("config.ini", "w") as c:
+                    #     self.config.write(c)
 
     def _cpu(self):
         max_cpu_util = float(self.config["cpu"]["max_util"])
