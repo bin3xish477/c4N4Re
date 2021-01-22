@@ -63,10 +63,11 @@ from logging import getLogger
 
 from re import search
 
+from base64 import b64decode
+
 class Watcher:
-    def __init__(self, config, password):
+    def __init__(self, config):
         self.config                        = config
-        self.password                      = password
         self.num_of_alerts                 = 0
         self.logger                        = getLogger(__name__)
         self.system                        = system()
@@ -74,7 +75,14 @@ class Watcher:
         self.continue_beyond_initial_alert = self.config.getboolean("general", "continue_beyond_initial_alert")
 
         if self.config.has_option("ip", "subnet_blocklist"):
-            self.ip_blocklist = list(ip for s in self.config["ip"]["subnet_blocklist"].split("|") for ip in IPNetwork(s.strip()))
+            valid_subnets = []
+            for subnet in list(map(lambda s: s.strip(), self.config["ip"]["subnet_blocklist"].split("|"))):
+                if search(r"\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}", subnet) or search(r"\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}/\d{1,2}", subnet):
+                    valid_subnets.append(subnet)
+                else:
+                    self.logger.info("An invalid subnet was detected in the config file")
+                    continue
+            self.ip_blocklist = [IPNetwork(s.strip()) for s in valid_subnets]
 
         if self.system == "Windows":
             if self.config.has_section("local_groups") and self.config["local_groups"]["allow_list"].strip() == "":
@@ -104,7 +112,13 @@ class Watcher:
                     self.logger.info("{_file} does not exists")
 
     def _cpu(self):
-        max_cpu_util = float(self.config["cpu"]["max_util"])
+        if self.config.has_option("cpu", "max_util") and self.config["cpu"]["max_util"] != "":
+            max_cpu_util = float(self.config["cpu"]["max_util"])
+        else:
+            self.logger.warning("The CPU canary will not run because a maximun CPU " \
+                "utilization value, `max_util`, was not found in the config file")
+            self.cpu_canary = False
+            return
 
         if cpu_percent() > max_cpu_util:
             _cpu_freq    = cpu_freq()
@@ -124,7 +138,13 @@ class Watcher:
     
     def _ram(self):
         _virtual_memory = virtual_memory()
-        max_ram_util = float(self.config["ram"]["max_util"])
+        if self.config.has_option("ram", "max_util") and self.config["ram"]["max_util"] != "":
+            max_ram_util = float(self.config["ram"]["max_util"])
+        else:
+            self.logger.warning("The RAM canary will not run because a maximun RAM " \
+                "utilization value, `max_util`, was not found in the config file")
+            self.ram_canary = False
+            return
 
         if _virtual_memory.percent > max_ram_util:
             gb = 2 ** 30
@@ -143,39 +163,54 @@ class Watcher:
             self.num_of_alerts += 1
     
     def _disks(self):
-        max_disk_util = float(self.config["disks"]["max_util"])
+        if self.config.has_option("disks", "max_util") and self.config["disks"]["max_util"] != "":
+            max_disk_util = float(self.config["disks"]["max_util"])
+        else:
+            self.logger.warning("The disk canary will not run because a maximun disk " \
+                "utilization value, `max_util`, was not found in the config file")
+            self.disk_canary = False
+            return
 
-        for drive in self.config["disks"]["drives"].split("|"):
-            drive            = drive.strip()
-            drive_stats   = disk_usage(drive)
-            drive_percentage = drive_stats.percent
+        try:
+            for drive in self.config["disks"]["drives"].split("|"):
+                drive            = drive.strip()
+                drive_stats   = disk_usage(drive)
+                drive_percentage = drive_stats.percent
 
-            if drive_percentage > max_disk_util:
-                gb = 2 ** 30
-                drive_space   = drive_stats.total / gb
-                drive_used    = drive_stats.used / gb
-                drive_free    = drive_stats.free / gb
-                max_disk_util = float(self.config["disks"]["max_util"])
+                if drive_percentage > max_disk_util:
+                    gb = 2 ** 30
+                    drive_space   = drive_stats.total / gb
+                    drive_used    = drive_stats.used / gb
+                    drive_free    = drive_stats.free / gb
+                    max_disk_util = float(self.config["disks"]["max_util"])
 
-                message = f"c4N4Re has detected a storage drive ({drive}) that has " \
-                          f"exceeded the max disk utilization percentage of {max_disk_util}%." \
-                          f"\n{drive} Stats:\n\tTotal Space = {drive_space}\n\tUsed Space = {drive_used}" \
-                          f"\n\tFree Space = {drive_free}\n\tUsed Space in Percentage = {drive_percentage}%"
-                self._send_alert(
-                    self.config["disks"]["subject"],
-                    message)
-                self.num_of_alerts += 1
+                    message = f"c4N4Re has detected a storage drive ({drive}) that has " \
+                              f"exceeded the max disk utilization percentage of {max_disk_util}%." \
+                              f"\n{drive} Stats:\n\tTotal Space = {drive_space}\n\tUsed Space = {drive_used}" \
+                              f"\n\tFree Space = {drive_free}\n\tUsed Space in Percentage = {drive_percentage}%"
+                    self._send_alert(
+                        self.config["disks"]["subject"],
+                        message)
+                    self.num_of_alerts += 1
+        except FileNotFoundError:
+            self.logger.warning("The disk canary will not run because no drives were specified in config file")
+            self.disks_canary = False
 
     def _ssh(self):
-        max_concurrent_ssh_connections = int(self.config["ssh"]["max_concurrent_ssh_connections"])
+        if self.config.has_option("ssh", "max_ssh_connections") and self.config["ssh"]["max_ssh_connections"] != "":
+            max_ssh_connections = int(self.config["ssh"]["max_ssh_connections"])
+        else:
+            self.logger("The SSH canary will not run because no value for `max_ssh_connections` was specified" \
+                " the config file")
+            self.ssh_canary = False
 
         ssh_conns = 0
         for conn in net_connections():
             if conn.laddr.port == 22 or (conn.raddr and conn.raddr.port == 22):
                 ssh_conns += 1
-            if ssh_conns > max_concurrent_ssh_connections:
+            if ssh_conns > max_ssh_connections:
                 message = f"c4N4Re has detected that there are concurrent SSH connections" \
-                          f" and has exceeded the max SSH connections allowed: {max_concurrent_ssh_connections}"
+                          f" and has exceeded the max SSH connections allowed: {max_ssh_connections}"
                 self._send_alert(
                     self.config["ssh"]["subject"],
                     message)
@@ -183,9 +218,30 @@ class Watcher:
                 break
 
     def _ip(self):
-        for conn in net_connections():
-            if conn.laddr.ip in self.ip_blocklist:
-                pass
+        detected_blacklisted_ip = False
+        if self.ip_blocklist:
+            for conn in net_connections():
+                local_ip = conn.laddr.ip
+                if conn.raddr:
+                    remote_ip = conn.raddr.ip
+                else:
+                    remote_ip = False
+                for network in self.ip_blocklist:
+                    if local_ip in network:
+                        message = f"c4N4Re has detected the presence of an IP address in a blocklisted subnet: {local_ip}."
+                        detected_blacklisted_ip = True
+                    elif remote_ip and remote_ip in network:
+                        message = f"c4N4Re has detected the presence of an IP address in a blocklisted subnet: {remote_ip}."
+                        detected_blacklisted_ip = True
+                    if detected_blacklisted_ip:
+                        self._send_alert(
+                            self.config["ip"]["subject"],
+                            message)
+                        self.num_of_alerts += 1
+
+        else:
+            self.logger.info("The IP blocklist canary will not run because no IP or subnet was found in config file")
+            self.ip_canary = False
 
     def _files(self):
         if len(self.monitored_files_access_times) != 0 and len(self.monitored_files) != 0:
@@ -214,13 +270,6 @@ class Watcher:
             except (NoSuchProcess, AccessDenied, ZombieProcess):
                 self.logger.info("An attempt to get a processes name failed")
                 continue
-
-    def _startup(self):
-        r"""
-        Registry key for all users startup applications:
-        HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
-        """
-        self.num_of_alerts += 1
 
     def _users(self):
         r"""
@@ -326,13 +375,15 @@ class Watcher:
         server = self.config["smtp_config"]["server"]
         port   = self.config["smtp_config"]["port"]
 
-        with Emailer(server, port) as email:
+        with Emailer(server, port) as emailer:
             login = self.config["login"]
+            email = b64decode(login["email"]).decode("utf8")
+            app_pass = b64decode(login["app_pass"]).decode("utf8")
             try:
-                email.authenticate(login["email"], self.password)
-                email.send(login["email"], subject, message)
+                emailer.authenticate(email, app_pass)
+                emailer.send(email, subject, message)
             except:
-                self.logger.critical("An error occured with SMTP")
+                self.logger.critical("An error sending alert email via SMTP")
                 exit(1)
 
         if self.continue_beyond_initial_alert:
@@ -341,24 +392,26 @@ class Watcher:
             exit(0)
 
     def watch(self):
-        while True:
-            #if self.config.has_section("cpu"):
-            #    self._cpu()
-            #if self.config.has_section("ram"):
-            #    self._ram()
-            #if self.config.has_section("disks"):
-            #    self._disks()
-            if self.config.has_section("files"):
-                self._files()
-            #if self.config.has_section("processes"):
-            #    self._processes()
-            #if self.config.has_section("disks"):
-            #    self._disks()
-            #if self.config.has_section("ssh"):
-            #    self._ssh()
-            # if self.config.has_section("users"):
-            #     self._users()
-            #if self.config.has_section("local_groups"):
-            #    self._local_groups()
+        if self.config.has_section("cpu"):          self.cpu_canary = True
+        if self.config.has_section("ram"):          self.ram_canary = True
+        if self.config.has_section("disks"):        self.disk_canary = True
+        if self.config.has_section("files"):        self.files_canary = True
+        if self.config.has_section("processes"):    self.processes_canary = True
+        if self.config.has_section("ssh"):          self.ssh_canary = True
+        if self.config.has_section("ip"):           self.ip_canary = True
+        if self.config.has_section("users"):        self.users_canary = True
+        if self.config.has_section("local_groups"): self.local_groups_canary = True
 
-            sleep(int(self.config["general"]["interval_between_checks"]))
+        interval_between_checks = int(self.config["general"]["interval_between_checks"])
+        while True:
+            if self.cpu_canary:          self._cpu()
+            if self.ram_canary:          self._ram()
+            if self.disk_canary:         self._disks()
+            if self.files_canary:        self._files()
+            if self.processes_canary:    self._processes()
+            if self.ssh_canary:          self._ssh()
+            if self.ip_canary:           self._ip()
+            if self.users_canary:        self._users()
+            if self.local_groups_canary: self._local_groups()
+
+            sleep(interval_between_checks)

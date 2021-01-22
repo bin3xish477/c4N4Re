@@ -47,8 +47,26 @@ UUID=cdc89b31-ed23-4663-a72b-8139ef673fc1 /boot           ext4    strictatime,de
 
 ## STMP Authentication
 
-c4N4Re will look for the environment variables: `EMAIL_ADDR` and `EMAIL_PASS`', where the former is the email address and the latter is the app password for the specified email address. If you are using Gmail, as most peopele are, it is advised to [create an app password](https://www.lifewire.com/get-a-password-to-access-gmail-by-pop-imap-2-1171882).
 
+**NOTE**: c4N4Re will store your email credentials in it's config file, so when deployed within a honeypot, it's best to setup another email account that is specifically used for receiving alerts from c4N4Re and nothing else. This email account should also not be linkable to your main email accounts.
+
+c4N4Re will look for the environment variables: `EMAIL_ADDR` and `EMAIL_PASS`', where the former is the email address and the latter is the password for the specified email address. If you are using Gmail, as most people are, it is advised to [create an app password](https://www.lifewire.com/get-a-password-to-access-gmail-by-pop-imap-2-1171882). 
+
+**Setting environment variables in Linux**
+
+```
+export EMAIL_ADDR='Your_email_address'
+export EMAIL_PASS='Your_email_password'
+```
+
+**Setting environment variables in PowerShell**
+
+```
+$Env:EMAIL_ADDR='Your_email_address'
+$Env:EMAIL_PASS='Your_email_password'
+```
+
+**NOTE**: After running c4N4Re once, you can delete the environment variables you created because they will get stored in the config.ini for c4N4Re to use again the next time it runs.
 
 ## Usage 
 
@@ -61,8 +79,6 @@ Using c4N4Re is all about the `config.ini` file. Uncommenting will any section, 
 monitor = secrets.txt
 subject = [Custom subject header for email]
 ```
-
-**Note**: since the credentials are being stored in this file, you should add the `config.ini` as a file to be monitored in order for c4N4Re to alert you when someone accesses this file.
 
 - The `monitor` option is where you specify which files you wish to get an alerted upon someone accessing them. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
 - The `subject` option is configurable for all canaries that are activated

@@ -22,56 +22,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from tkinter import Tk
-from tkinter import Label
-from tkinter import Button
-from tkinter import Entry
-from tkinter import messagebox
-
-from passlib.context import CryptContext
-
 from logging import getLogger
 
 from os import environ
 
 from sys import exit
 
+from base64 import b64encode
+
 class Login:
 	def __init__(self, config):
 		self.config    = config
 		self.logger    = getLogger(__name__)
 		self._email    = ""
-		self._password = ""
+		self._app_pass  = ""
 
 	@property
 	def email(self):
 		return self._email
 
 	@property
-	def password(self):
-		return self._password
+	def app_pass(self):
+		return self._app_pass
 	
-	@property
-	def password_hash(self):
-		return self._password_hash
-
 	def env_login(self):
 		try:
 			self._email    = environ["EMAIL_ADDR"]
-			self._password = environ["EMAIL_PASS"]
+			self._app_pass = environ["EMAIL_PASS"]
 		except KeyError as e:
 			self.logger.critical("EMAIL_ADDR or EMAIL_PASS environment variables not set")
 			exit(1)
 
 		if not self.config.has_section("login"):
+			self.logger.info("adding `login` section to config file")
 			self.config.add_section("login")
-			self.config["login"]["email"] = self.email
-			self.config["login"]["app_pass"] = self.password
+			self.config.set("login", "email", b64encode(bytes(self.email, "utf8")).decode("utf8"))
+			self.config.set("login", "app_pass", b64encode(bytes(self.app_pass, "utf8")).decode("utf8"))
 		else:
 			if self.config["login"]["email"] != self.email:
-				self.config["login"]["email"] = self.email
-			if self.config["login"]["app_pass"] != self.password
-				self.config["login"]["app_pass"] = self.password
+				self.logger.info("updating login email")
+				self.config["login"]["email"] = b64encode(bytes(self.email, "utf8")).decode("utf8")
+			if self.config["login"]["app_pass"] != self.app_pass:
+				self.logger.info("updating login app password")
+				self.config["login"]["app_pass"] = b64encode(bytes(self.app_pass, "utf8")).decode("utf8")
 
 		with open("config.ini", "w") as f:
 			self.config.write(f)

@@ -38,7 +38,7 @@ from sys import exit
 from logging import getLogger, INFO, basicConfig
 
 logger = getLogger(__name__)
-format_ = "[%(asctime)s] : %(filename)s : %(message)s"
+format_ = "[%(asctime)s] : %(filename)s : %(lineno)s: %(message)s"
 basicConfig(
     format=format_, level=INFO,
     filename="c4N4Re.log", filemode='w'
@@ -48,19 +48,20 @@ if __name__ == "__main__":
 	config = ConfigParser()
 	config.read("config.ini")
 
-	login = Login(config=config)
-	try:
-		login.get_env()
-	except:
-		logger.critical(
-			"Unable to retrieve email or password values from config file. Prompting user for creds"
-			)
+	if not config["login"]["email"] or not config["login"]["app_pass"]:
+		login = Login(config=config)
+		try:
+			login.env_login()
+		except:
+			logger.critical("Unable to retrieve email or app password values from config file.")
 
 	try:
-		watcher = Watcher(config, login.password)
+		watcher = Watcher(config=config)
 		watcher.watch()
 	except AttributeError as e:
-		logger.critical("Password has not been set. Prompting user for creds")
+		print(e)
+		logger.critical("app password has not been set.")
+		exit(1)
 	except KeyboardInterrupt:
 		logger.info("Captured KeyboardInterrupt exception. Exiting program")
 		exit(1)
