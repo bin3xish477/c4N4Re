@@ -361,4 +361,4 @@ class Watcher:
             #if self.config.has_section("local_groups"):
             #    self._local_groups()
 
-            sleep(int(self.config["general"]["interval_between_evaluations"]))
+            sleep(int(self.config["general"]["interval_between_checks"]))
