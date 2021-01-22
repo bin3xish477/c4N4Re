@@ -50,8 +50,7 @@ if __name__ == "__main__":
 
 	login = Login(config=config)
 	try:
-		login.email    = config["login"]["email"]
-		login.password = config["login"]["password"]
+		login.get_env()
 	except:
 		logger.critical(
 			"Unable to retrieve email or password values from config file. Prompting user for creds"
