@@ -54,14 +54,14 @@ c4N4Re will look for the environment variables: `EMAIL_ADDR` and `EMAIL_PASS`', 
 
 **Setting environment variables in Linux**
 
-```
+```bash
 export EMAIL_ADDR='Your_email_address'
 export EMAIL_PASS='Your_email_password'
 ```
 
 **Setting environment variables in PowerShell**
 
-```
+```powershell
 $Env:EMAIL_ADDR='Your_email_address'
 $Env:EMAIL_PASS='Your_email_password'
 ```
