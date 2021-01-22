@@ -1,5 +1,0 @@
-passlib
-psutil
-netaddr
-pywin32
-configparser
