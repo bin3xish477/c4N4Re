@@ -77,6 +77,24 @@ but of course, if you have a different SMTP server you wish to use, just set the
 
 ## Usage 
 
+The general section found in the `config.ini` has three options that allows you to control some functionality:
+
+```ini
+[general]
+; the number of seconds to wait before c4N4Re
+; checks for triggered canaries
+interval_between_checks = 2
+; If this is set to true, you will continue to receive
+; alerts from c4N4Re when a canary is triggered 
+; as long as it running
+; if this is set to false, you will only receive one email
+; from c4N4Re when a canary triggered and then c4N4Re will exit.
+continue_beyond_initial_alert = true
+; the number of alert emails to receive from c4N4Re
+; Note: this only applies when `continue_beyond_initial_alert` is set to true
+max_alerts = 5
+```
+
 **Enabling Canaries**
 
 Using c4N4Re is all about the `config.ini` file. Uncommenting any section, excluding the "general" and "smtp_config" sections, will be configured to automatically activate a canary corresponding to the name of that section. 
