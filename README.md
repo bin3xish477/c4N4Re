@@ -16,31 +16,6 @@ Installing Python Dependencies for **Linux**:
 python3 -m pip install -U -r linux_requirements.txt
 ```
 
-Configure access times in /etc/fstab:
-    - https://opensource.com/article/20/6/linux-noatime
-    - https://askubuntu.com/questions/985030/mount-with-atime
-
-Example `/etc/fstab` file:
-
-```
-# /etc/fstab: static file system information.
-#
-# Use 'blkid' to print the universally unique identifier for a
-# device; this may be used with UUID= as a more robust way to name devices
-# that works even if disks are added and removed. See fstab(5).
-#
-# systemd generates mount units based on this file, see systemd.mount(5).
-# Please run 'systemctl daemon-reload' after making changes here.
-#
-# <file system> <mount point>   <type>  <options>       <dump>  <pass>
-# / was on /dev/sda5 during installation
-UUID=f7a7012f-74d9-49a9-a352-abaaa98ec476 /               btrfs   strictatime,nodatacow,compress,discard 0       0
-# /boot was on /dev/sda1 during installation
-UUID=cdc89b31-ed23-4663-a72b-8139ef673fc1 /boot           ext4    strictatime,defaults        0       2
-/swapfile                                 none            swap    sw              0       0
-/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
-```
-
 ## STMP Authentication and Setup
 
 **NOTE**: c4N4Re will store your email credentials in it's config file, so when deployed within a honeypot, it's best to setup another email account that is specifically used for receiving alerts from c4N4Re and nothing else. This email account should also not be linkable to your main email accounts.
@@ -169,6 +144,33 @@ subject = [ATTENTION] Port Canary Triggered
 
 ###  File Canary
 
+**NOTE**: if you wish to use the file canaries, you need to tell the Linux kernal that you want to use `strictatime` as opposed to `relatime`. You can find more information regarding what this does in the following links:
+
+    - https://opensource.com/article/20/6/linux-noatime
+    - https://askubuntu.com/questions/985030/mount-with-atime
+    
+but it pretty much just has to do with the amount of time it takes before the access times for files in Linux get updated.
+So, in order to make this change you need to edit your `/etc/fstab` file and add the value `strictatime` to your drives as shown below (You really only need to add this value to the `/` mount point, specifying to main drive):
+
+```
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda5 during installation
+UUID=f7a7012f-74d9-49a9-a352-abaaa98ec476 /               btrfs   strictatime,nodatacow,compress,discard 0       0
+# /boot was on /dev/sda1 during installation
+UUID=cdc89b31-ed23-4663-a72b-8139ef673fc1 /boot           ext4    strictatime,defaults        0       2
+/swapfile                                 none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+```
+
 ```ini
 [files]
 monitor = secrets.txt|C:\Users\binexis\important.txt
@@ -177,6 +179,7 @@ subject = [Custom subject header for email]
 
 - The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified files, you'll recieve an alert email notifying you of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
+
 
 ### Process Canary
 
