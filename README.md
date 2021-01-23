@@ -214,7 +214,7 @@ subject = [ATTENTION] New Local Group Canary Triggered
 - The `allow` option allows you to specify which local groups should exist on the host. If c4N4Re detects that a new user was create, c4N4Re will send an alert email regarding the newly created group. If this value is set to nothing, for example, `allow = `, c4N4Re will automatically populate this field with all the groups on the system.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-## Run
+## Run (Must be ran as Administrator !!!)
 
 ```
 python3 c4N4Re.py
