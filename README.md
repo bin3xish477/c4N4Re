@@ -142,7 +142,7 @@ max_ssh_connections = 1
 subject = [ATTENTION] Concurrnt SSH Connection Max Canary Triggered
 ```
 
-- The `monitor` option specifies the maximum number of concurrent SSH connections that must be exceeded before c4N4re sends you an alert email informing you about the number of active SSH connections on the host.
+- The `max_ssh_connections` option specifies the maximum number of concurrent SSH connections that must be exceeded before c4N4re sends you an alert email informing you about the number of active SSH connections on the host.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### IP Canary
