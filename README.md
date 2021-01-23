@@ -72,16 +72,36 @@ $Env:EMAIL_PASS='Your_email_password'
 
 **Enabling Canaries**
 
-Using c4N4Re is all about the `config.ini` file. Uncommenting will any section, excluding the "general", will be configured to run automatically activate a canary revelant to the name of that section. For example, setting the activating a file canary for a particular file looks something like this:
+Using c4N4Re is all about the `config.ini` file. Uncommenting any section, excluding the "general", will be configured to automatically activate a canary corresponding to the name of that section. 
 
-```python
+### CPU Canary
+
+### RAM Canary
+
+### Storage Disks Canary
+
+### SSH Canary
+
+### IP Canary
+
+### Ports Canary
+
+###  FileCanary
+
+```ini
 [files]
-monitor = secrets.txt
+monitor = secrets.txt|C:\Users\binexis\important.txt
 subject = [Custom subject header for email]
 ```
 
-- The `monitor` option is where you specify which files you wish to get an alerted upon someone accessing them. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
 - The `subject` option is configurable for all canaries that are activated
+
+### Process Canary
+
+### New User Canary
+
+### New Local Group Canary
 
 ## Schedule c4N4Re to run at Startup on Linux and Windows
 
