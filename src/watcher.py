@@ -37,7 +37,8 @@ from psutil import NoSuchProcess
 from psutil import AccessDenied
 from psutil import ZombieProcess
 
-if system() == "Windows":
+SYSTEM = system()
+if SYSTEM == "Windows":
     from winreg import ConnectRegistry
     from winreg import OpenKey
     from winreg import HKEY_LOCAL_MACHINE
@@ -65,18 +66,26 @@ from re import search
 
 from base64 import b64decode
 
+from socket import socket
+from socket import AF_INET
+from socket import SOCK_STREAM
+from socket import gethostname
+
+from datetime import datetime
+
 class Watcher:
     def __init__(self, config):
         self.config                        = config
         self.num_of_alerts                 = 0
         self.logger                        = getLogger(__name__)
-        self.system                        = system()
+        self.system                        = SYSTEM
+        self.hostname                      = gethostname()
         self.max_alerts                    = int(self.config["general"]["max_alerts"])
         self.continue_beyond_initial_alert = self.config.getboolean("general", "continue_beyond_initial_alert")
 
         if self.config.has_option("ip", "subnet_blocklist"):
             valid_subnets = []
-            for subnet in list(map(lambda s: s.strip(), self.config["ip"]["subnet_blocklist"].split("|"))):
+            for subnet in tuple(map(lambda s: s.strip(), self.config["ip"]["subnet_blocklist"].split("|"))):
                 if search(r"\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}", subnet) or search(r"\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}/\d{1,2}", subnet):
                     valid_subnets.append(subnet)
                 else:
@@ -85,23 +94,23 @@ class Watcher:
             self.ip_blocklist = [IPNetwork(s.strip()) for s in valid_subnets]
 
         if self.system == "Windows":
-            if self.config.has_section("local_groups") and self.config["local_groups"]["allow_list"].strip() == "":
+            if self.config.has_section("local_groups") and self.config["local_groups"]["allow"].strip() == "":
                 self.groups = [group["name"] for group in NetLocalGroupEnum(None, 0, 0)[0]]
-                self.config.set("local_groups", "allow_list", "|".join(self.groups))
+                self.config.set("local_groups", "allow", "|".join(self.groups))
                 with open("config.ini", "w") as f:
                     self.config.write(f)
         else:
-            if self.config.has_section("local_groups") and self.config["local_groups"]["allow_list"].strip() == "":
+            if self.config.has_section("local_groups") and self.config["local_groups"]["allow"].strip() == "":
                 self.groups = []
                 with open("/etc/group") as f:
                     for line in f:
                         self.groups.append(line.split(':')[0])
-                    self.config.set("local_groups", "allow_list", "|".join(self.groups))
+                    self.config.set("local_groups", "allow", "|".join(self.groups))
                     with open("config.ini", "w") as c:
                         self.config.write(c)
 
         if self.config.has_section("files"):
-            self.monitored_files = list(
+            self.monitored_files = tuple(
                 map(lambda s: s.lower(), self.config["files"]["monitor"].split("|"))
             )
             self.monitored_files_access_times = {}
@@ -127,11 +136,11 @@ class Watcher:
             max_freq     = _cpu_freq.max
             _cpu_count   = cpu_count()
 
-            message = f"c4N4Re has detected that CPU utilization has exceeded the maximum " \
+            message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected that CPU utilization has exceeded the maximum " \
                       f"utilization percentage currently set to {max_cpu_util}%\n" \
                       f"CPU Stats:\n\tCount = {_cpu_count}\n\tCurrent Frequency = {current_freq}" \
                       f"\n\tMinimun Frequency = {min_freq}\n\tMaximum Frequency = {max_freq}\n"
-            self._send_alert(
+            self.__send_alert(
                 self.config["cpu"]["subject"],
                 message)
             self.num_of_alerts += 1
@@ -153,11 +162,11 @@ class Watcher:
             ram_used      = _virtual_memory.used / gb
             ram_free      = _virtual_memory.free / gb
 
-            message = f"c4N4Re has detected that RAM utilization has exceeded the maximum " \
+            message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected that RAM utilization has exceeded the maximum " \
                       f"utilization percentage currently set to {max_ram_util}%." \
                       f"\nRAM Stats:\n\tTotal = {ram_total}\n\tAvailable = {ram_available}" \
                       f"\n\tUsed = {ram_used}\t\nFree = {ram_free}\n"
-            self._send_alert(
+            self.__send_alert(
                 self.config["ram"]["subject"],
                 message)
             self.num_of_alerts += 1
@@ -184,11 +193,11 @@ class Watcher:
                     drive_free    = drive_stats.free / gb
                     max_disk_util = float(self.config["disks"]["max_util"])
 
-                    message = f"c4N4Re has detected a storage drive ({drive}) that has " \
+                    message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected a storage drive ({drive}) that has " \
                               f"exceeded the max disk utilization percentage of {max_disk_util}%." \
                               f"\n{drive} Stats:\n\tTotal Space = {drive_space}\n\tUsed Space = {drive_used}" \
                               f"\n\tFree Space = {drive_free}\n\tUsed Space in Percentage = {drive_percentage}%"
-                    self._send_alert(
+                    self.__send_alert(
                         self.config["disks"]["subject"],
                         message)
                     self.num_of_alerts += 1
@@ -209,9 +218,9 @@ class Watcher:
             if conn.laddr.port == 22 or (conn.raddr and conn.raddr.port == 22):
                 ssh_conns += 1
             if ssh_conns > max_ssh_connections:
-                message = f"c4N4Re has detected that there are concurrent SSH connections" \
-                          f" and has exceeded the max SSH connections allowed: {max_ssh_connections}"
-                self._send_alert(
+                message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected that the number of SSH" \
+                          f" connections has exceeded the maximum SSH connections allowed: {max_ssh_connections}"
+                self.__send_alert(
                     self.config["ssh"]["subject"],
                     message)
                 self.num_of_alerts += 1
@@ -228,13 +237,15 @@ class Watcher:
                     remote_ip = False
                 for network in self.ip_blocklist:
                     if local_ip in network:
-                        message = f"c4N4Re has detected the presence of an IP address in a blocklisted subnet: {local_ip}."
+                        message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected the presence of an IP address "\
+                                  f"in a blocklisted subnet: {local_ip}."
                         detected_blacklisted_ip = True
                     elif remote_ip and remote_ip in network:
-                        message = f"c4N4Re has detected the presence of an IP address in a blocklisted subnet: {remote_ip}."
+                        message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected "\
+                                  f"the presence of an IP address in a blocklisted subnet: {remote_ip}."
                         detected_blacklisted_ip = True
                     if detected_blacklisted_ip:
-                        self._send_alert(
+                        self.__send_alert(
                             self.config["ip"]["subject"],
                             message)
                         self.num_of_alerts += 1
@@ -243,27 +254,50 @@ class Watcher:
             self.logger.info("The IP blocklist canary will not run because no IP or subnet was found in config file")
             self.ip_canary = False
 
+    def _ports(self):
+        try:
+            deny_ports = tuple(map(lambda s: int(s.strip()), self.config["ports"]["deny"].split('|')))
+        except ValueError:
+            self.logger.warning("An invalid port number was specified in the config file under the ports section")
+            self.ports_canary = False
+            return
+
+        for port in deny_ports:
+            with socket(AF_INET, SOCK_STREAM) as sock:
+                if sock.connect_ex(("127.0.0.1", port)) == 0:
+                    message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has discovered an open port " \
+                              f"that is not supposed to be open: {port}."
+                    self.__send_alert(
+                        self.config["ports"]["subject"],
+                        message)
+                    self.num_of_alerts += 1
+
     def _files(self):
         if len(self.monitored_files_access_times) != 0 and len(self.monitored_files) != 0:
             for _file in self.monitored_files:
-                if stat(_file).st_atime != self.monitored_files_access_times[_file]:
-                    message = f"c4N4Re has detected that some accessed the file {_file}."
-                    self._send_alert(
+                current_file_access_time = stat(_file).st_atime
+                if current_file_access_time != self.monitored_files_access_times[_file]:
+                    message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected that " \
+                              f"someone has accessed the file: {_file}."
+                    self.__send_alert(
                         self.config["files"]["subject"],
                         message)
                     self.num_of_alerts += 1
+                    self.monitored_files_access_times[_file] = current_file_access_time
                     break
+        else:
+            self.files_canary = False
 
     def _processes(self):
-        monitored_services = list(
+        monitored_processes = tuple(
             map(lambda s: s.lower(), self.config["processes"]["monitor"].split("|"))
             )
         for process in process_iter():
             try:
-                if process.name().lower() in monitored_services:
-                    message = f"c4N4Re has detected a running service " \
-                    f"currently being monitored: {process.name()}"
-                    self._send_alert(
+                if process.name().lower() in monitored_processes:
+                    message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected a running service " \
+                              f"currently being monitored: {process.name()}"
+                    self.__send_alert(
                         self.config["processes"]["subject"],
                         message)
                     self.num_of_alerts += 1
@@ -285,26 +319,22 @@ class Watcher:
             an alert will be triggered
         """
         target_key = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
-        allowed_users = list(map(lambda s: s.strip(), self.config["users"]["allow_list"].split("|")))
+        allowed_users = tuple(map(lambda s: s.strip(), self.config["users"]["allow"].split("|")))
 
         if self.system == "Windows":
             with ConnectRegistry(None, HKEY_LOCAL_MACHINE) as hklm:
                 with OpenKey(hklm, target_key, 0, KEY_ALL_ACCESS) as profile_list:
-
                     subkeys = QueryInfoKey(profile_list)[0]
                     for i in range(subkeys):
                         subkey = EnumKey(profile_list, i)
                         if search(r"^S-\d-\d+-(\d+-){1,14}\d+$", subkey):
-
                             with OpenKey(hklm, f"{target_key}\\{subkey}", 0, KEY_ALL_ACCESS) as user_key:
-
                                 user = QueryValueEx(user_key, r"ProfileImagePath")[0].split("\\")[-1]
-
                                 if user not in allowed_users:
-                                    message = f"c4N4Re has detected a interactive new user: {user}. " \
+                                    message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected a interactive new user: {user}. " \
                                               f"If you have not created a new user or have not changed the shell " \
                                               f"for a service account, then your system might be compromised!"
-                                    self._send_alert(
+                                    self.__send_alert(
                                         self.config["users"]["subject"],
                                         message)
                                     self.num_of_alerts += 1
@@ -317,7 +347,7 @@ class Watcher:
                             "csh"   # C Shell
                             ) 
             interactive_users = []
-            allowed_users = list(map(lambda s: s.strip(), self.config["users"]["allow_list"].split('|')))
+            allowed_users = tuple(map(lambda s: s.strip(), self.config["users"]["allow"].split('|')))
 
             with open("/etc/passwd") as passwd:
                 for entry in passwd:
@@ -327,17 +357,18 @@ class Watcher:
                         interactive_users.append(user)
                     for interactive_user in interactive_users:
                         if interactive_user not in allowed_users:
-                            message = f"c4N4Re has detected a new interactive user: {interactive_user}. " \
+                            message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected " \
+                                      f"a new interactive user: {interactive_user}. " \
                                       f"If you have not created a new user or have not changed the shell " \
                                       f"for a service account, then your system might be compromised!"
-                            self._send_alert(
+                            self.__send_alert(
                                 self.config["users"]["subject"],
                                 message)
                             self.num_of_alerts += 1
 
     def _local_groups(self):
         if "groups" not in self.__dict__:
-            allowed_groups = list(map(lambda s: s.strip(), self.config["local_groups"]["allow_list"].split("|")))
+            allowed_groups = tuple(map(lambda s: s.strip(), self.config["local_groups"]["allow"].split("|")))
         else:
             allowed_groups = self.groups
 
@@ -345,11 +376,12 @@ class Watcher:
             for group in NetLocalGroupEnum(None, 0, 0)[0]:
                 group = group["name"]
                 if group not in allowed_groups:
-                    message = f"c4N4Re has detected the creation of a new local group: {group}. " \
+                    message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has " \
+                              f"detected the creation of a new local group: {group}. " \
                               f"This group may have been created after installing a new application " \
                               f"but this may have also been created by an adversary. Further research " \
                               f"is encouraged."
-                    self._send_alert(
+                    self.__send_alert(
                         self.config["local_groups"]["subject"],
                         message)
                     self.num_of_alerts += 1
@@ -358,16 +390,16 @@ class Watcher:
                 for grp in group:
                     grp = grp.split(":")[0]
                     if grp not in allowed_groups:
-                        message = f"c4N4Re has detected the creation of a new group: {grp}. " \
+                        message = f"Host: {self.hostname}\nTime: {datetime.now()}\nAlert: c4N4Re has detected the creation of a new group: {grp}. " \
                                   f"This group may have been created after installing a new application " \
                                   f"but this may have also been created by an adversary. Further research " \
                                   f"is encouraged."
-                        self._send_alert(
+                        self.__send_alert(
                             self.config["local_groups"]["subject"],
                             message)
                         self.num_of_alerts += 1
     
-    def _send_alert(self, subject, message):
+    def __send_alert(self, subject, message):
         """Sends an alert to an email account"""
         if self.num_of_alerts == self.max_alerts:
             exit(0)
@@ -392,15 +424,26 @@ class Watcher:
             exit(0)
 
     def watch(self):
-        if self.config.has_section("cpu"):          self.cpu_canary = True
-        if self.config.has_section("ram"):          self.ram_canary = True
-        if self.config.has_section("disks"):        self.disk_canary = True
-        if self.config.has_section("files"):        self.files_canary = True
-        if self.config.has_section("processes"):    self.processes_canary = True
-        if self.config.has_section("ssh"):          self.ssh_canary = True
-        if self.config.has_section("ip"):           self.ip_canary = True
-        if self.config.has_section("users"):        self.users_canary = True
-        if self.config.has_section("local_groups"): self.local_groups_canary = True
+        if self.config.has_section("cpu"):
+            self.cpu_canary = True
+        if self.config.has_section("ram"):
+            self.ram_canary = True
+        if self.config.has_section("disks"):
+            self.disk_canary = True
+        if self.config.has_section("files"):
+            self.files_canary = True
+        if self.config.has_section("processes"):
+            self.processes_canary = True
+        if self.config.has_section("ssh"):
+            self.ssh_canary = True
+        if self.config.has_section("ip"):
+            self.ip_canary = True
+        if self.config.has_section("ports"):
+            self.ports_canary = True
+        if self.config.has_section("users"):
+            self.users_canary = True
+        if self.config.has_section("local_groups"):
+            self.local_groups_canary = True
 
         interval_between_checks = int(self.config["general"]["interval_between_checks"])
         while True:
@@ -411,6 +454,7 @@ class Watcher:
             if self.processes_canary:    self._processes()
             if self.ssh_canary:          self._ssh()
             if self.ip_canary:           self._ip()
+            if self.ports_canary:        self._ports()
             if self.users_canary:        self._users()
             if self.local_groups_canary: self._local_groups()
 

@@ -38,7 +38,7 @@ from sys import exit
 from logging import getLogger, INFO, basicConfig
 
 logger = getLogger(__name__)
-format_ = "[%(asctime)s] : %(filename)s : %(lineno)s: %(message)s"
+format_ = "[%(asctime)s]:%(filename)s:%(lineno)s:%(message)s"
 basicConfig(
     format=format_, level=INFO,
     filename="c4N4Re.log", filemode='w'
@@ -48,7 +48,9 @@ if __name__ == "__main__":
 	config = ConfigParser()
 	config.read("config.ini")
 
-	if not config["login"]["email"] or not config["login"]["app_pass"]:
+	if (not config.has_section("login")
+		or not config.has_option("login", "email")
+		or not config.has_option("login", "app_pass")):
 		login = Login(config=config)
 		try:
 			login.env_login()
@@ -58,10 +60,9 @@ if __name__ == "__main__":
 	try:
 		watcher = Watcher(config=config)
 		watcher.watch()
-	except AttributeError as e:
-		print(e)
-		logger.critical("app password has not been set.")
-		exit(1)
 	except KeyboardInterrupt:
 		logger.info("Captured KeyboardInterrupt exception. Exiting program")
+		exit(1)
+	except Exception as e:
+		logger.critical(f"Exception -> {e}")
 		exit(1)
