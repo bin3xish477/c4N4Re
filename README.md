@@ -214,6 +214,12 @@ subject = [ATTENTION] New Local Group Canary Triggered
 - The `allow` option allows you to specify which local groups should exist on the host. If c4N4Re detects that a new user was create, c4N4Re will send an alert email regarding the newly created group. If this value is set to nothing, for example, `allow = `, c4N4Re will automatically populate this field with all the groups on the system.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
+## Run
+
+```
+python3 c4N4Re.py
+```
+
 ## Schedule c4N4Re to run at Startup on Linux and Windows
 
 **Windows**
@@ -225,5 +231,5 @@ https://www.codespeedy.com/how-to-run-a-python-file-when-windows-starts/
 Edit the crontab file with `crontab -e` and add the following:
 
 ```bash
-@reboot /opt/c4N4Re/c4N4Re.py
+@reboot sudo /opt/c4N4Re/c4N4Re.py
 ```
