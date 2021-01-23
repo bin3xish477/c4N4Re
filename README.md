@@ -82,7 +82,7 @@ The general section found in the `config.ini` has three options that allows you 
 ```ini
 [general]
 ; the number of seconds to wait before c4N4Re
-; checks for triggered canaries
+; checks for any triggered canaries
 interval_between_checks = 2
 ; If this is set to true, you will continue to receive
 ; alerts from c4N4Re when a canary is triggered 
@@ -107,8 +107,8 @@ max_util = 80.0
 subject = [ATTENTION] CPU Utilization Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option specifies the subject header for the alert you will recieve if this canary is triggered.
+- The `max_util` option specifies the maximum CPU utilization percentage that must be exceeded before c4N4Re to send you an alert email informing you about high CPU utilization percentages.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### RAM Canary
 
@@ -118,8 +118,8 @@ max_util = 80.0
 subject = [ATTENTION] RAM Utilization Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `max_util` option specifies the maximum RAM utilization percentage that must be exceeded before c4N4Re sends you an alert email informing you about high RAM utilization percentages.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### Storage Disks Canary
 
@@ -130,8 +130,9 @@ max_util = 80.0
 subject = [ATTENTION] Disk Utilization Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `drives` options is where you specify the drive you wish to monitor storage levels.
+- The `max_util` option specifies the maximum storage percentage that must be exceeded before c4N4Re sends you an alert email regarding the stats for a drive such as total, used, and available space.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### SSH Canary
 
@@ -141,8 +142,8 @@ max_ssh_connections = 1
 subject = [ATTENTION] Concurrnt SSH Connection Max Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `monitor` option specifies the maximum number of concurrent SSH connections that must be exceeded before c4N4re sends you an alert email informing you about the number of active SSH connections on the host.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### IP Canary
 
@@ -152,8 +153,8 @@ subnet_blocklist = 31.33.7.0/24
 subject = [ATTENTION] Blacklisted IP Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `subnet_blocklist` specifies which IP subnet the host is not allowed to communicate with. If c4N4Re finds an IP address being used within the provided subnet, c4N4Re will send an email regarding the IP address it detected.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### Ports Canary
 
@@ -163,10 +164,10 @@ deny = 22|80
 subject = [ATTENTION] Port Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `deny` options can be used to specify which ports should not be running locally on the host system. If c4N4Re detects that one of these ports are open, c4N4Re will send an alert email regarding the opened port. 
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-###  FileCanary
+###  File Canary
 
 ```ini
 [files]
@@ -174,8 +175,8 @@ monitor = secrets.txt|C:\Users\binexis\important.txt
 subject = [Custom subject header for email]
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified files, you'll recieve an alert email notifying you of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### Process Canary
 
@@ -185,8 +186,8 @@ monitor = notepad.exe
 subject = [ATTENTION] Process Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `monitor` option allows you to specify which process should not be running on the host. If c4N4Re discovers that a process with a name found in the `monitor` list is running, c4N4Re will send an alert email informing you that that process is running.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### New User Canary
 
@@ -196,8 +197,8 @@ allow = rodri
 subject = [ATTENTION] New User Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `allow` option allows you to specify which users should be on the host. If c4N4Re detects that a new user was created and therefore not in the `allow` list, c4N4Re will send an alert email regarding the newly created user/s.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ### New Local Group Canary
 
@@ -207,8 +208,8 @@ allow = Administrators|Backup Operators|Guests
 subject = [ATTENTION] New Local Group Canary Triggered
 ```
 
-- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
-- The `subject` option is configurable for all canaries that are activated
+- The `allow` option allows you to specify which local groups should exist on the host. If c4N4Re detects that a new user was create, c4N4Re will send an alert email regarding the newly created group. If this value is set to nothing, for example, `allow = `, c4N4Re will automatically populate this field with all the groups on the system.
+- The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 ## Schedule c4N4Re to run at Startup on Linux and Windows
 
