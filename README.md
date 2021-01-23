@@ -4,17 +4,13 @@
 
 ## Setup
 
-**Windows**
-
-Installing Python Dependencies:
+Installing Python Dependencies for **Windows**:
 
 ```
 python3 -m pip install -U -r windows_requirements.txt
 ```
 
-**Linux**
-
-Installing Python Dependencies:
+Installing Python Dependencies for **Linux**:
 
 ```
 python3 -m pip install -U -r linux_requirements.txt
@@ -76,15 +72,69 @@ Using c4N4Re is all about the `config.ini` file. Uncommenting any section, exclu
 
 ### CPU Canary
 
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
+
 ### RAM Canary
+
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
 
 ### Storage Disks Canary
 
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
+
 ### SSH Canary
+
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
 
 ### IP Canary
 
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
+
 ### Ports Canary
+
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
 
 ###  FileCanary
 
@@ -99,9 +149,36 @@ subject = [Custom subject header for email]
 
 ### Process Canary
 
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
+
 ### New User Canary
 
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
+
 ### New Local Group Canary
+
+```ini
+[files]
+monitor = secrets.txt|C:\Users\binexis\important.txt
+subject = [Custom subject header for email]
+```
+
+- The `monitor` option is where you specify which files you wish to monitor. If anyone opens any one of the specified file, you'll recieve an alert email notifying of this action. This is perfect for creating seemingly lucrative files to lure a hacker to open them, expecting to obtain some valid information.
+- The `subject` option is configurable for all canaries that are activated
 
 ## Schedule c4N4Re to run at Startup on Linux and Windows
 
