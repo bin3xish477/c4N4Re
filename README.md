@@ -218,7 +218,8 @@ subject = [ATTENTION] New Local Group Canary Triggered
 
 **Windows**
 
-Run:
+Run as Administrator:
+
 ```
 python3 c4N4Re_on_startup_windows.py
 ```
