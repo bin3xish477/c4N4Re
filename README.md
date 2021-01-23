@@ -217,7 +217,8 @@ subject = [ATTENTION] New Local Group Canary Triggered
 ## Schedule c4N4Re to run at Startup on Linux and Windows
 
 **Windows**
-https://www.ionos.com/digitalguide/server/configuration/startup-folder-in-windows-10/
+
+Run: `c4N4Re_on_startup_windows.py`
 
 **Linux**
 Edit the crontab file with `crontab -e` and add the following:
