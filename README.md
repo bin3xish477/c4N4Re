@@ -70,11 +70,11 @@ continue_beyond_initial_alert = true
 max_alerts = 5
 ```
 
-**Enabling Canaries**
+### Enabling Canaries
 
 Using c4N4Re is all about the `config.ini` file. Uncommenting any section, excluding the "general" and "smtp_config" sections, will be configured to automatically activate a canary corresponding to the name of that section. 
 
-### CPU Canary
+**CPU Canary**
 
 ```ini
 [cpu]
@@ -85,7 +85,7 @@ subject = [ATTENTION] CPU Utilization Canary Triggered
 - The `max_util` option specifies the maximum CPU utilization percentage that must be exceeded before c4N4Re to send you an alert email informing you about high CPU utilization percentages.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-### RAM Canary
+**RAM Canary**
 
 ```ini
 [ram]
@@ -96,7 +96,9 @@ subject = [ATTENTION] RAM Utilization Canary Triggered
 - The `max_util` option specifies the maximum RAM utilization percentage that must be exceeded before c4N4Re sends you an alert email informing you about high RAM utilization percentages.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-### Storage Disks Canary
+**Storage Disks Canary**
+
+**Note**: currently only works with **Windows**
 
 ```ini
 [disks]
@@ -109,7 +111,7 @@ subject = [ATTENTION] Disk Utilization Canary Triggered
 - The `max_util` option specifies the maximum storage percentage that must be exceeded before c4N4Re sends you an alert email regarding the stats for a drive such as total, used, and available space.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-### SSH Canary
+**SSH Canary**
 
 ```ini
 [ssh]
@@ -120,7 +122,7 @@ subject = [ATTENTION] Concurrnt SSH Connection Max Canary Triggered
 - The `max_ssh_connections` option specifies the maximum number of concurrent SSH connections that must be exceeded before c4N4re sends you an alert email informing you about the number of active SSH connections on the host.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-### IP Canary
+**IP Canary**
 
 ```ini
 [ip]
@@ -131,7 +133,7 @@ subject = [ATTENTION] Blacklisted IP Canary Triggered
 - The `subnet_blocklist` specifies which IP subnet the host is not allowed to communicate with. If c4N4Re finds an IP address being used within the provided subnet, c4N4Re will send an email regarding the IP address it detected.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-### Ports Canary
+**Ports Canary**
 
 ```ini
 [ports]
@@ -142,7 +144,7 @@ subject = [ATTENTION] Port Canary Triggered
 - The `deny` options can be used to specify which ports should not be running locally on the host system. If c4N4Re detects that one of these ports are open, c4N4Re will send an alert email regarding the opened port. 
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-###  File Canary
+**File Canary**
 
 **NOTE**: if you wish to use the file canaries on **Linux**, you need to tell the Linux kernal that you want your drives to use `strictatime` as opposed to `relatime`. You can find more information regarding what this does in the following links:
 
@@ -180,7 +182,7 @@ subject = [Custom subject header for email]
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
 
-### Process Canary
+**Process Canary**
 
 ```ini
 [processes]
@@ -191,7 +193,7 @@ subject = [ATTENTION] Process Canary Triggered
 - The `monitor` option allows you to specify which process should not be running on the host. If c4N4Re discovers that a process with a name found in the `monitor` list is running, c4N4Re will send an alert email informing you that that process is running.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-### New User Canary
+**New User Canary**
 
 ```ini
 [users]
@@ -202,7 +204,7 @@ subject = [ATTENTION] New User Canary Triggered
 - The `allow` option allows you to specify which users should be on the host. If c4N4Re detects that a new user was created and therefore not in the `allow` list, c4N4Re will send an alert email regarding the newly created user/s.
 - The `subject` option specifies the subject header for the alert email you will recieve if this canary is triggered.
 
-### New Local Group Canary
+**New Local Group Canary**
 
 ```ini
 [local_groups]
