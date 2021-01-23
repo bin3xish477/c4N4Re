@@ -144,10 +144,9 @@ subject = [ATTENTION] Port Canary Triggered
 
 ###  File Canary
 
-**NOTE**: if you wish to use the file canaries, you need to tell the Linux kernal that you want to use `strictatime` as opposed to `relatime`. You can find more information regarding what this does in the following links:
+**NOTE**: if you wish to use the file canaries on **Linux**, you need to tell the Linux kernal that you want your drives to use `strictatime` as opposed to `relatime`. You can find more information regarding what this does in the following links:
 
-    - https://opensource.com/article/20/6/linux-noatime
-    - https://askubuntu.com/questions/985030/mount-with-atime
+- https://askubuntu.com/questions/985030/mount-with-atime
     
 but it pretty much just has to do with the amount of time it takes before the access times for files in Linux get updated.
 So, in order to make this change you need to edit your `/etc/fstab` file and add the value `strictatime` to your drives as shown below (You really only need to add this value to the `/` mount point, specifying to main drive):
