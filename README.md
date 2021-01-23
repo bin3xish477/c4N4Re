@@ -218,11 +218,10 @@ subject = [ATTENTION] New Local Group Canary Triggered
 
 **Windows**
 
-Run as Administrator:
-
-```
-python3 c4N4Re_on_startup_windows.py
-```
+1. Create a shortcut to the `c4N4Re.py` file and move it to the desktop
+2. Press "Win" + r keys
+3. Type `shell:startup` and press enter
+4. Move the c4N4Re shortcut from the desktop into startup folder
 
 **Linux**
 
