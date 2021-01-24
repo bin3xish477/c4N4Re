@@ -1,6 +1,6 @@
 # c4N4Re
 
-**c4N4Re** (pronounced "canary") is a Python program created to easily enable a variety of system canaries. c4N4Re would be perfect to run on a honeypot system but it can also be used on a normal computer where you can track and get alerts when things like CPU and RAM utilization percentages exceed a particular value. 
+**c4N4Re** (pronounced "canary") is a Python program created to easily enable a variety of system canaries. c4N4Re would be perfect to run on a honeypot system but it can also be used on a normal computer where you can track and get alerts when things like CPU and RAM utilization percentages exceed a particular value. I am still looking for more types of canaries to add to this project so if you have any suggestions, leave them in the issues tab.
 
 ## Example C4N4Re Alert
 
